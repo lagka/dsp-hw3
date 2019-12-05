@@ -131,7 +131,8 @@ int main(int argc, char *argv[]){
         {
             outputFile << *it2 << " ";
         }
-        outputFile << "\n";
+        if(it1-AnsPaths.begin()+1<AnsPaths.end()-AnsPaths.begin())
+            outputFile << "\n";
     }
     outputFile.close();
     
