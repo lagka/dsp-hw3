@@ -129,7 +129,10 @@ int main(int argc, char *argv[]){
     {
         for(auto it2=(*it1).rbegin();it2!=(*it1).rend();++it2)
         {
-            outputFile << *it2 << " ";
+            if(it2-(*it1).rbegin()+1<(*it1).rend()-(*it1).rbegin())
+                outputFile << *it2 << " ";
+            else
+                outputFile << *it2;
         }
         if(it1-AnsPaths.begin()+1<AnsPaths.end()-AnsPaths.begin())
             outputFile << "\n";
