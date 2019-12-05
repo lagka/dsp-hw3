@@ -1,0 +1,2 @@
+Warning: disambig option "-order" needs an argument
+bigram.lm: line 9: warning: non-zero probability for <unk> in closed-vocabulary LM
