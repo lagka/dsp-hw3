@@ -26,7 +26,7 @@ all: $(TARGET)
 
 map:
 	@#TODO
-	@#python3 mapping.py $(FROM) $(TO)
+	python3 mapping.py --From $(FROM) --To $(TO)
 
 clean:
 	$(RM) $(OBJ) $(TARGET)
