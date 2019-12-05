@@ -15,6 +15,7 @@ _dict = defaultdict(list)
 
 for line in fin:
     character , zhuyins = line.split()
+    _dict[character].append(character)
     for zhuyin in zhuyins.split('/'):
         _dict[zhuyin[0]].append(character)
 fin.close()
