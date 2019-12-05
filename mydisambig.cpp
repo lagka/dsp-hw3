@@ -5,6 +5,7 @@
 #include<vector>
 #include<string>
 #include<fstream>
+#include<cstring>
 
 using namespace std;
 
@@ -25,24 +26,30 @@ int main(int argc, char *argv[]){
     lm.read(lmFile);
     lmFile.close();
 
-    map<string,vector<VocabString>> vocabmap;
+    map<string,vector<string>> vocabmap;
     File mapFile(argv[2], "r");
-
+    ofstream outputFile;
+    outputFile.open(argv[4]); 
     char *buf, *map_buf;
     while(map_buf = mapFile.getline()){
         VocabString sent1[maxWordsPerLine];
         unsigned int count = Vocab::parseWords(map_buf, &(sent1[0]), maxWordsPerLine);
+        vector<string> sent_string;
         for(int i=1;i<count;i++){
-            vocabmap[sent1[0]].push_back(sent1[i]);
+            sent_string.push_back(sent1[i]);
         }
+        vocabmap[sent1[0]] = sent_string;
     }
+
     vocabmap["<s>"].push_back("<s>");
     vocabmap["</s>"].push_back("</s>");
     mapFile.close();
 
     File testFile(argv[1], "r");
-    vector<vector<VocabString>> AnsPaths;
+    vector<vector<string>> AnsPaths;
+    int check = 0;
     while(buf = testFile.getline()){
+
         VocabString sent2[maxWordsPerLine];
         unsigned int count = Vocab::parseWords(buf, &(sent2[1]), maxWordsPerLine);
         sent2[0] = "<s>";
@@ -55,33 +62,31 @@ int main(int argc, char *argv[]){
         proba[0].push_back(0);
         indexTable[0].push_back(0);
         backtrack[0].push_back(-1);
-
         for(int t=1;t<count;t++)
         {
             int size = 0;
-            map<string,vector<VocabString>>::iterator vocab_iter;
-            vocab_iter = vocabmap.find(sent2[t]);
-            cout << sent2[t] << endl;
-            for(vector<VocabString>::iterator it=vocab_iter->second.begin();it!=vocab_iter->second.end();++it)
+            auto vocab_iter = vocabmap.find(sent2[t]);
+
+            if(vocab_iter==vocabmap.end())
             {
-                cout << "fuck 0" << endl;
-                cout << *it<< endl;
-                VocabIndex w_t2 = voc.getIndex(*it);
-                cout << "fuck 0.5"<<endl;
+                cout << "I have no idea what to do" << endl;
+            }
+            for(auto it=vocab_iter->second.begin();it!=vocab_iter->second.end();++it)
+            {
+                VocabIndex w_t2 = voc.getIndex((*it).c_str());
+                //outputFile<< sent2[t] << " "<< size << " "<<w_t2 << " "<<*it << " "<< it-vocab_iter->second.begin()<<"\n";
                 w_t2 = (w_t2 == Vocab_None)? voc.getIndex(Vocab_Unknown): w_t2;
                 LogP max_p = LogP_Zero;
-                cout << "fuck1" << endl;
                 int max_id = 0;
-                cout << "fuck2" << endl;
                 for(int i=0;i<indexTable[t-1].size();i++)
                 {
-                    VocabIndex w_t1 = voc.getIndex(vocabmap[sent2[t-1]][indexTable[t-1][i]]);
+                    string last_word = (vocabmap.find(sent2[t-1])->second)[indexTable[t-1][i]];
+                    VocabIndex w_t1 = voc.getIndex(last_word.c_str());
                     w_t1 = (w_t1 == Vocab_None)? voc.getIndex(Vocab_Unknown): w_t1;
 
                     VocabIndex context[] = {w_t1, Vocab_None};
 
                     LogP logp = lm.wordProb(w_t2, context);
-                    cout << logp << endl;
                     logp+=proba[t-1][i];
 
                     if(logp>max_p)
@@ -90,15 +95,11 @@ int main(int argc, char *argv[]){
                         max_id = i;
                     }
                 }
-                cout << "fuck3" << endl;
+
                 proba[t].push_back(max_p);
-                cout << "fuck4" << endl;
                 indexTable[t].push_back(it-vocab_iter->second.begin());
-                cout << "fuck5" << endl;
                 backtrack[t].push_back(max_id);
-                cout << "fuck6" << endl;
                 size++;
-                cout << "fuck7" << endl;
             }               
         }
 
@@ -113,24 +114,20 @@ int main(int argc, char *argv[]){
             }
         }
 
-        vector<VocabString> AnsPath;
-        AnsPath.push_back("<s>");
+        vector<string> AnsPath;
         for(int i=count-1;i>0;i--)
         {
             AnsPath.push_back(vocabmap[sent2[i]][indexTable[i][max_col]]);
             max_col = backtrack[i][max_col];
         }
-        AnsPath.push_back("</s>");
+        AnsPath.push_back("<s>");
         AnsPaths.push_back(AnsPath);
     }
     testFile.close();
 
-    ofstream outputFile;
-    outputFile.open(argv[4]); 
-
-    for(vector<vector<VocabString>>::iterator it1=AnsPaths.begin();it1!=AnsPaths.end();++it1)
+    for(auto it1=AnsPaths.begin();it1!=AnsPaths.end();++it1)
     {
-        for(vector<VocabString>::iterator it2=(*it1).begin();it2!=(*it1).end();++it2)
+        for(auto it2=(*it1).rbegin();it2!=(*it1).rend();++it2)
         {
             outputFile << *it2 << " ";
         }
@@ -138,7 +135,6 @@ int main(int argc, char *argv[]){
     }
     outputFile.close();
     
-
     return 0;
 }
 
